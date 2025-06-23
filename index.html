@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گالری تصاویر با قابلیت نمایش بزرگ و سواپ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family:  Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .gallery-item {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            aspect-ratio: 4/3;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Lightbox Styles */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .lightbox.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev {
+            z-index: 1000;
+            left: 20px;
+        }
+
+        .next {
+            z-index: 1000;
+            right: 20px;
+        }
+
+        .close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .close:hover {
+            text-shadow: 0 0 20px #fdbb2d;
+            color: #fdbb2d;
+        }
+
+        .image-counter {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            transition: all 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .lightbox-content:hover .image-counter {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .instructions {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            max-width: 600px;
+            margin: 40px auto 0;
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .instructions ul {
+            list-style: none;
+            text-align: right;
+            padding: 0 20px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .lightbox-nav {
+                width: 40px;
+                height: 40px;
+            }
+
+            .close {
+                top: 20px;
+                right: 20px;
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>گالری تصاویر حرفه‌ای</h1>
+            <p class="subtitle">روی هر عکس کلیک کنید تا به صورت تمام‌صفحه مشاهده کنید. سپس با استفاده از دکمه‌ها یا
+                حرکات سواپ بین عکس‌ها حرکت کنید.</p>
+        </header>
+
+        <div class="gallery">
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="طبیعت زیبا">
+            </div>
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="کوهستان">
+            </div>
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1433086966358-54859d0ed716?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="آبشار">
+            </div>
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="جنگل">
+            </div>
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="ساحل">
+            </div>
+            <div class="gallery-item">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                    alt="منظره">
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>راهنمای استفاده</h3>
+            <ul>
+                <li>روی هر عکس کلیک کنید تا به صورت تمام‌صفحه نمایش داده شود</li>
+                <li>برای حرکت به عکس بعدی از دکمه سمت چپ یا حرکت سواپ به چپ استفاده کنید</li>
+                <li>برای حرکت به عکس قبلی از دکمه سمت راست یا حرکت سواپ به راست استفاده کنید</li>
+                <li>برای خروج از حالت تمام‌صفحه روی دکمه بستن (×) کلیک کنید</li>
+                <li>همچنین می‌توانید از کلیدهای جهت‌نمای کیبورد (→ ←) استفاده کنید</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox">
+        <div class="close">&times;</div>
+        <div class="lightbox-nav prev">&#10095;</div>
+        <div class="lightbox-nav next">&#10094;</div>
+        <div class="lightbox-content">
+            <img loading="lazy" class="lightbox-img" src="" alt="">
+            <div class="image-counter">1/6</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const galleryItems = document.querySelectorAll(".gallery-item");
+            const lightbox = document.querySelector(".lightbox");
+            const lightboxImg = document.querySelector(".lightbox-img");
+            const closeBtn = document.querySelector(".close");
+            const prevBtn = document.querySelector(".prev");
+            const nextBtn = document.querySelector(".next");
+            const imageCounter = document.querySelector(".image-counter");
+
+            let currentImageIndex = 0;
+            let startX = 0;
+
+            galleryItems.forEach((item, index) => {
+                item.addEventListener("click", () => {
+                    currentImageIndex = index;
+                    updateLightboxImage();
+                    lightbox.classList.add("active");
+                    document.body.style.overflow = "hidden";
+                });
+            });
+
+            closeBtn.addEventListener("click", () => {
+                lightbox.classList.remove("active");
+                document.body.style.overflow = "auto";
+            });
+
+            lightbox.addEventListener("click", (e) => {
+                if (e.target === lightbox) {
+                    lightbox.classList.remove("active");
+                    document.body.style.overflow = "auto";
+                }
+            });
+
+            prevBtn.addEventListener("click", showPrevImage);
+
+            nextBtn.addEventListener("click", showNextImage);
+
+            document.addEventListener("keydown", (e) => {
+                if (lightbox.classList.contains("active")) {
+                    if (e.key === "ArrowLeft") {
+                        showPrevImage();
+                    } else if (e.key === "ArrowRight") {
+                        showNextImage();
+                    } else if (e.key === "Escape") {
+                        lightbox.classList.remove("active");
+                        document.body.style.overflow = "auto";
+                    }
+                }
+            });
+
+            lightboxImg.addEventListener("touchstart", (e) => {
+                startX = e.touches[0].clientX;
+            });
+
+            lightboxImg.addEventListener("touchend", (e) => {
+                const endX = e.changedTouches[0].clientX;
+                const diffX = startX - endX;
+
+                if (Math.abs(diffX) > 50) {
+                    if (diffX > 0)
+                        showNextImage();
+
+                    else
+                        showPrevImage();
+                }
+            });
+
+            lightboxImg.addEventListener("mousedown", (e) => {
+                startX = e.clientX;
+                document.addEventListener("mouseup", onMouseUp);
+            });
+
+            function onMouseUp(e) {
+                const endX = e.clientX;
+                const diffX = startX - endX;
+
+                if (Math.abs(diffX) > 50) {
+                    if (diffX > 0)
+                        showNextImage();
+
+                    else
+                        showPrevImage();
+                }
+
+                document.removeEventListener("mouseup", onMouseUp);
+            }
+
+            function showPrevImage() {
+                currentImageIndex = (currentImageIndex - 1 + galleryItems.length) % galleryItems.length;
+                updateLightboxImage();
+            }
+
+            function showNextImage() {
+                currentImageIndex = (currentImageIndex + 1) % galleryItems.length;
+                updateLightboxImage();
+            }
+
+            function updateLightboxImage() {
+                const imgSrc = galleryItems[currentImageIndex].querySelector("img").src;
+                lightboxImg.src = imgSrc;
+                imageCounter.textContent = `${currentImageIndex + 1}/${galleryItems.length}`;
+
+                const lastStyle = document.querySelector(".image-counter").style;
+                document.querySelector(".image-counter").style = `opacity: 1 !important; visibility: visible !important;`;
+                setTimeout(() => {
+                    document.querySelector(".image-counter").style = lastStyle;
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+
+</html>
